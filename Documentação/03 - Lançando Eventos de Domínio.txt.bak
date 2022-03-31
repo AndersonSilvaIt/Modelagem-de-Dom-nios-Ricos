@@ -1,0 +1,12 @@
+Para lançar eventos, é necessário instalar o MediatR
+no projeto de domínio e no Core.
+install-package mediatr
+
+
+implementado a classe de evento para o produto
+
+Classe que será enviada no evento ...
+ProdutoAbaixoEstoqueEvent
+
+
+Classe que irá manipular o evento.
