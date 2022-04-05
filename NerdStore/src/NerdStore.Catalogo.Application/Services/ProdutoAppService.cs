@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace NerdStore.Catalogo.Application.Services
 {
-    public class ServicoAppService : IProdutoAppService
+    public class ProdutoAppService : IProdutoAppService
     {
         private readonly IProdutoRepository _produtoRepository;
         private readonly IMapper _mapper;
         private readonly IEstoqueService _estoqueService;
 
-        public ServicoAppService(IProdutoRepository produtoRepository, 
+        public ProdutoAppService(IProdutoRepository produtoRepository, 
                                  IMapper mapper, IEstoqueService estoqueService)
         {
             _produtoRepository = produtoRepository;

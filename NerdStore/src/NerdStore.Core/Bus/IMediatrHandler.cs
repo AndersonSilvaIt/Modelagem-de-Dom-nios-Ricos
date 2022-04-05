@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace NerdStore.Core.Bus
 {
-    public interface IMediatorHandler
+    public interface IMediatrHandler
     {
         Task PublicarEvento<T>(T evento) where T : Event;
     }
