@@ -65,7 +65,7 @@ namespace NerdStore.WebApp.MVC.Controllers.admin
         [Route("produtos-atualizar-estoque")]
         public async Task<IActionResult> AtualizarEstoque(Guid guid)
         {
-            return View("Estoque", await _produtoAppService.ObterPorId(id));
+            return View("Estoque", await _produtoAppService.ObterPorId(guid));
         }
 
 
