@@ -1,2 +1,8 @@
 Criado o projeto par aimplementar o CQRS
 
+Criado as entidades para criar o CQRS 
+Pedido - Voucher  E etc. 
+
+Agora é implementado o CQRS
+
+É necessário instalar o Fluent Validation

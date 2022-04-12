@@ -1,7 +1,0 @@
-Para realzar o mapeamento entre as entidades e as viewModels é usado o Automapper.
-
-é preciso instalar o AutoMapper na camada de aplicação;
-
-install-package automapper
-
-Criado as classes de configuração do automapper, como as entidades de de Domínio são criadas passando parâmetros no construtor, então é preciso configurar o Automapper.
