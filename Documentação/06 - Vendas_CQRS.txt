@@ -1,1 +1,2 @@
 Criado o projeto par aimplementar o CQRS
+
