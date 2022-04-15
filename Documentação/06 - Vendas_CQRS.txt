@@ -5,4 +5,11 @@ Pedido - Voucher  E etc.
 
 Agora é implementado o CQRS
 
-É necessário instalar o Fluent Validation
+É necessário instalar o Fluent Validation 
+
+install-package fluentValidation
+
+Implementado o command para usar no CQRS
+PedindoCommand e o Handler desse pedido.
+
+Um evento serve para avisar em algum momento ocorreu uma ação, exemplo, uma compra foi feita, então agora é preciso debitar do estoque, sou salvar os dados no banco de leitura.
