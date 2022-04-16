@@ -1,5 +1,7 @@
 ﻿using MediatR;
+using NerdStore.Core.Bus;
 using NerdStore.Core.Messages;
+using NerdStore.Core.Messages.CommonMessages.Notifications;
 using NerdStore.Vendas.Application.Events;
 using NerdStore.Vendas.Domain;
 using System.Linq;
@@ -8,12 +10,18 @@ using System.Threading.Tasks;
 
 namespace NerdStore.Vendas.Application.Commands
 {
-    public class PedidoCommandHandler : IRequestHandler<AdicionarItemPedidoCommand, bool>
+    public class PedidoCommandHandler : 
+        IRequestHandler<AdicionarItemPedidoCommand, bool>,
+        IRequestHandler<AtualizarItemPedidoCommand, bool>,
+        IRequestHandler<RemoverItemPedidoCommand, bool>,
+        IRequestHandler<AplicarVoucherPedidoCommand, bool>
     {
         private readonly IPedidoRepository _pedidoRepository;
-        public PedidoCommandHandler(IPedidoRepository pedidoRepository)
+        private readonly IMediatorHandler _mediatorHandler;
+        public PedidoCommandHandler(IPedidoRepository pedidoRepository, IMediatorHandler mediator)
         {
             _pedidoRepository = pedidoRepository;
+            _mediatorHandler = mediator;
         }
 
         public async Task<bool> Handle(AdicionarItemPedidoCommand message, CancellationToken cancellationToken)
@@ -53,13 +61,115 @@ namespace NerdStore.Vendas.Application.Commands
             return await _pedidoRepository.UnitOfWork.Commit();
         }
 
+        public async Task<bool> Handle(AtualizarItemPedidoCommand message, CancellationToken cancellationToken)
+        {
+            if (!ValidarComando(message)) return false;
+
+            var pedido = await _pedidoRepository.ObterPedidoRascunhoPorClienteId(message.ClienteId);
+
+            if(pedido == null)
+            {
+                await _mediatorHandler.PublicarNotificacao(new DomainNotification("pedido", "Pedido não encontrado"));
+                return false;
+            }
+
+            var pedidoItem = await _pedidoRepository.ObterItemPorPedido(pedido.Id, message.ProdutoId);
+
+            if (!pedido.PedidoItemExistente(pedidoItem))
+            {
+                await _mediatorHandler.PublicarNotificacao(new DomainNotification("pedido", "Item do pedido não encontrado!"));
+                return false;
+            }
+
+            pedido.AtualizarUnidades(pedidoItem, message.Quantidade);
+            
+            _pedidoRepository.AtualizarItem(pedidoItem);
+            _pedidoRepository.Atualizar(pedido);
+
+            pedido.AdicionarEvento(new PedidoAtualizadoEvent(pedido.ClienteId, pedido.Id, pedido.ValorTotal));
+
+            pedido.AdicionarEvento(new PedidoProdutoAtualizadoEvent(pedido.ClienteId, pedido.Id, message.ProdutoId, message.Quantidade));
+
+            return await _pedidoRepository.UnitOfWork.Commit();
+        }
+
+        public async Task<bool> Handle(RemoverItemPedidoCommand message, CancellationToken cancellationToken)
+        {
+            if (!ValidarComando(message)) return false;
+
+            var pedido = await _pedidoRepository.ObterPedidoRascunhoPorClienteId(message.ClienteId);
+
+            if (pedido == null)
+            {
+                await _mediatorHandler.PublicarNotificacao(new DomainNotification("pedido", "Pedido não encontrado"));
+                return false;
+            }
+
+            var pedidoItem = await _pedidoRepository.ObterItemPorPedido(pedido.Id, message.ProdutoId);
+
+            if (pedidoItem != null && !pedido.PedidoItemExistente(pedidoItem))
+            {
+                await _mediatorHandler.PublicarNotificacao(new DomainNotification("pedido", "Item do pedido não encontrado!"));
+                return false;
+            }
+
+            pedido.RemoverItem(pedidoItem);
+
+            pedido.AdicionarEvento(new PedidoAtualizadoEvent(pedido.ClienteId, pedido.Id, pedido.ValorTotal));
+            pedido.AdicionarEvento(new PedidoProdutoRemovidoEvent(message.ClienteId, pedido.Id, message.ProdutoId));
+
+            _pedidoRepository.RemoverItem(pedidoItem);
+            _pedidoRepository.Atualizar(pedido);
+
+            return await _pedidoRepository.UnitOfWork.Commit();
+        }
+
+        public async Task<bool> Handle(AplicarVoucherPedidoCommand message, CancellationToken cancellationToken)
+        {
+            if (!ValidarComando(message)) return false;
+
+            var pedido = await _pedidoRepository.ObterPedidoRascunhoPorClienteId(message.ClienteId);
+
+            if (pedido == null)
+            {
+                await _mediatorHandler.PublicarNotificacao(new DomainNotification("pedido", "Pedido não encontrado"));
+                return false;
+            }
+
+            var voucher = await _pedidoRepository.ObterVoucherPorCodigo(message.CodigoVoucher);
+            if(voucher == null)
+            {
+                await _mediatorHandler.PublicarNotificacao(new DomainNotification("pedido", "Voucher não encontrado!"));
+                return false;
+            }
+
+            var voucherAplicacaoValication = pedido.AplicatVoucher(voucher);
+
+            if (!voucherAplicacaoValication.IsValid)
+            {
+                foreach (var error in voucherAplicacaoValication.Errors)
+                {
+                    await _mediatorHandler.PublicarNotificacao(new DomainNotification(error.ErrorCode, error.ErrorMessage));
+                }
+
+                return false;
+            }
+
+            pedido.AdicionarEvento(new PedidoAtualizadoEvent(pedido.ClienteId, pedido.Id, pedido.ValorTotal));
+            pedido.AdicionarEvento(new VoucherAplicadoPedidoEvent(message.ClienteId, pedido.Id, voucher.Id));
+
+            _pedidoRepository.Atualizar(pedido);
+
+            return await _pedidoRepository.UnitOfWork.Commit();
+        }
+
         private bool ValidarComando(Command message)
         {
             if (message.EhValido()) return true;
 
             foreach (var error in message.ValidationResult.Errors)
             {
-                // lançar evento de erro
+                _mediatorHandler.PublicarNotificacao(new DomainNotification(message.MessageType, error.ErrorMessage));
             }
 
             return false;

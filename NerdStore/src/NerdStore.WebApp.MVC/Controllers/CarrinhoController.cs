@@ -47,7 +47,6 @@ namespace NerdStore.WebApp.MVC.Controllers
             var command = new AdicionarItemPedidoCommand(ClienteId, produto.Id, produto.Nome, quantidade, produto.Valor);
             await _mediatorHandler.EnviarComando(command);
 
-
             if (OperacaoValida())
             {
                 return RedirectToAction("Index");
@@ -82,7 +81,7 @@ namespace NerdStore.WebApp.MVC.Controllers
             var produto = await _produtoAppService.ObterPorId(id);
             if (produto == null) return BadRequest();
 
-            var command = new AtualizarItemPedidoCommand(ClienteId, id);
+            var command = new AtualizarItemPedidoCommand(ClienteId, id, quantidade);
             await _mediatorHandler.EnviarComando(command);
 
             if (OperacaoValida())
@@ -97,7 +96,7 @@ namespace NerdStore.WebApp.MVC.Controllers
         [Route("aplicar-voucher")]
         public async Task<IActionResult> AplicatVoucher(string voucherCodigo)
         {
-            var command = new AplicarVoucherCommand(ClienteId, voucherCodigo);
+            var command = new AplicarVoucherPedidoCommand(ClienteId, voucherCodigo);
             await _mediatorHandler.EnviarComando(command);
 
             if (OperacaoValida())
