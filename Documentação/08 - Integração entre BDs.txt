@@ -1,0 +1,5 @@
+No catálogo onde está tratando os eventos de Produto, debitar estoque e etc...
+é preciso usar o evento PedidoIniciadoEvent, porém o catálogo não pode referenciar o projeto de vendas (onde se encontra o PedidoIniciadoEvent).
+então será criado uma classe específica para tratar isso. 
+
+Criado a clase IntegrationEvent, e o PedidoIniciadoEvent foi alterado para o projeto  "Core"
