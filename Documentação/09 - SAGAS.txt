@@ -1,0 +1,5 @@
+Sagas é um passo a passo do que o código precisa fazer (um caminho), caso ocorra algum erro, o código sabe retroceder o que fez anteriormente.
+
+Para implementar a SAGAS, será usada a ferrametna Rebus (Onde implementa uma fila de eventos "bus de eventos")
+
+Sagas geralmente é melhor usado em MicroServiços (não em projetos monolitos)
